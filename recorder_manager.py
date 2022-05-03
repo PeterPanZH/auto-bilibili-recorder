@@ -1,27 +1,29 @@
 import subprocess
+import logging
 
 from commons import BINARY_PATH
 
 
-def spawn_recorder(room):
+def spawn_recorder(port, room):
     spawn_command = \
         f"{BINARY_PATH}BililiveRecorder/BililiveRecorder.Cli/bin/Release/net5.0/BililiveRecorder.Cli " \
         f"portable " \
         f"-d 63 " \
         f"--webhook-url " \
-        f'"http://127.0.0.1:10261/process_video" ' \
+        f'"http://127.0.0.1:{port}/process_video" ' \
         f'--filename-format ' \
         '{roomid}/{date}/{roomid}-{date}-{time}-{ms}.flv ' \
         f'/storage/ ' \
         f'{room} '
-    print(f"swawn recorder for {room}: {spawn_command}")
+    logging.info("spawn recorder for %s", room)
+    logging.debug(spawn_command)
     return subprocess.Popen(spawn_command, shell=True)
 
 
 class RecorderManager:
 
-    def __init__(self, rooms):
-        self.recorder_dict: {int: subprocess.Popen} = {room: spawn_recorder(room) for room in rooms}
+    def __init__(self, port, rooms):
+        self.recorder_dict: {int: subprocess.Popen} = {room: spawn_recorder(port, room) for room in rooms}
 
     def update_rooms(self, new_rooms, dry_run=False):
         current_rooms = set(self.recorder_dict.keys())
@@ -30,7 +32,7 @@ class RecorderManager:
         to_new_rooms = new_rooms_set.difference(current_rooms)
         if not dry_run:
             for room in to_new_rooms:
-                self.recorder_dict[room] = spawn_recorder(room)
+                self.recorder_dict[room] = spawn_recorder(port, room)
             for room in to_del_rooms:
                 self.recorder_dict[room].terminate()
                 self.recorder_dict[room].wait(timeout=10)
@@ -47,4 +49,3 @@ if __name__ == '__main__':
 
     manager.update_rooms([3])
     time.sleep(10)
-

@@ -4,6 +4,7 @@ import os
 import sys
 import time
 import traceback
+import logging
 from asyncio import Task
 from typing import Optional
 
@@ -15,8 +16,7 @@ from recorder_config import RecoderRoom
 
 
 async def async_wait_output(command):
-    print(f"running: {command}")
-    sys.stdout.flush()
+    logging.debug("running: %s", command)
     process = await asyncio.create_subprocess_shell(
         command,
         stdout=asyncio.subprocess.PIPE,
@@ -77,16 +77,15 @@ class Session:
     end_time: Optional[datetime.datetime]
     room_id: int
     videos: [Video]
-    total_length: float
-    notify_length: int
-    length_alert: bool
+    resolution: (int, int)
+    duration: float
     he_time: Optional[float]
-    early_video_path: Optional[str]
     room_name: str
     room_title: str
     room_config: RecoderRoom
+    prepared: bool
 
-    def __init__(self, session_start_event_json, notify_length=60, room_config=None):
+    def __init__(self, session_start_event_json, room_config=None):
         if room_config is None:
             self.room_config = RecoderRoom({})
         else:
@@ -95,14 +94,13 @@ class Session:
         self.session_id = session_start_event_json["EventData"]["SessionId"]
         self.room_id = session_start_event_json["EventData"]["RoomId"]
         self.end_time = None
-        self.notify_length = notify_length
-        self.length_alert = False
-        self.total_length = 0
         self.videos = []
+        self.resolution = 0, 0
+        self.duration = 0.0
         self.he_time = None
-        self.early_video_path = None
         self.process_update(session_start_event_json)
         self.upload_task: Optional[Task] = None
+        self.prepared = False
 
     def process_update(self, update_json):
         self.room_name = update_json["EventData"]["Name"]
@@ -113,15 +111,18 @@ class Session:
     async def add_video(self, video):
         try:
             await video.query_meta()
-        except ValueError:
-            print(traceback.format_exc())
-            print(f"video corrupted, skipping: {video.flv_file_path()}")
+            if video.video_resolution_x == 0 or video.video_resolution_y == 0:
+                raise ValueError("resolution invalid")
+            w, h = self.resolution
+            if w != video.video_resolution_x or h != video.video_resolution_y:
+                raise ValueError("unmatched resolution")
+            self.duration += video.video_length_flv
+            self.resolution = video.video_resolution_x, video.video_resolution_y
+        except ValueError as err:
+            # print(traceback.format_exc())
+            logging.warn("video %s corrupted: %s", video.flv_file_path(), err)
             return
         self.videos += [video]
-        new_length = self.total_length + video.video_length
-        if (new_length // self.notify_length) != (self.total_length // self.notify_length):
-            self.length_alert = True
-        self.total_length += new_length
 
     def output_base_path(self):
         return self.videos[0].base_path + ".all"
@@ -131,7 +132,7 @@ class Session:
             "xml": self.output_base_path() + ".xml",
             "clean_xml": self.output_base_path() + ".clean.xml",
             "ass": self.output_base_path() + ".ass",
-            "early_video": self.output_base_path() + ".flv",
+            "early_video": self.output_base_path() + ".mp4",
             "danmaku_video": self.output_base_path() + ".bar.mp4",
             "concat_file": self.output_base_path() + ".concat.txt",
             "thumbnail": self.output_base_path() + ".thumb.png",
@@ -203,28 +204,15 @@ class Session:
                 break
             local_he_time -= video.video_length_flv
         if not thumbnail_generated:  # Rare case where he_pos is after the last video
-            print(f"{self.output_path()['video']}: thumbnail at {local_he_time} cannot be found")
             await self.videos[-1].gen_thumbnail(
                 self.videos[-1].video_length_flv / 2,
                 self.output_path()['thumbnail'],
                 self.output_path()['video_log']
             )
 
-    def get_resolution(self):
-        video_res_sorted = list(reversed([
-            (video.video_resolution_x / video.video_resolution_y,
-             video.video_resolution_x,
-             video.video_resolution_y)
-            for video in self.videos
-        ]))  # prioritize wider, higher-res format
-        video_res_x = video_res_sorted[0][1]
-        video_res_y = video_res_sorted[0][2]
-        return video_res_x, video_res_y
-
     async def process_danmaku(self):
-        video_res_x, video_res_y = self.get_resolution()
+        video_res_x, video_res_y = self.resolution
         font_size = max(video_res_x, video_res_y) * 55 // 1920
-        print(f"font_size: {font_size}")
         danmaku_conversion_command = \
             f"{BINARY_PATH}DanmakuFactory/DanmakuFactory " \
             f"-x {video_res_x} " \
@@ -237,32 +225,21 @@ class Session:
         await async_wait_output(danmaku_conversion_command)
 
     async def process_early_video(self):
-        if len(self.videos) == 1:
-            self.early_video_path = self.videos[0].flv_file_path
-        format_check = True
-        ref_video_res = self.videos[0].video_resolution
-        for video in self.videos:
-            if video.video_resolution != ref_video_res:
-                format_check = False
-                break
-        if not format_check:
-            return
         ffmpeg_command = f'''ffmpeg -y \
         -f concat \
         -safe 0 \
         -i "{self.output_path()['concat_file']}" \
         -c copy "{self.output_path()['early_video']}" >> "{self.output_path()["video_log"]}" 2>&1'''
         await async_wait_output(ffmpeg_command)
-        self.early_video_path = self.output_path()['early_video']
 
     async def process_video(self):
-        total_time = sum([video.video_length_flv for video in self.videos])
+        total_time = self.duration
         max_size = 8000_000 * 8  # Kb
         audio_bitrate = 320
         video_bitrate = (max_size / total_time - audio_bitrate) - 500  # just to be safe
         max_video_bitrate = float(8000)  # BiliBili now re-encode every video anyways
         video_bitrate = int(min(max_video_bitrate, video_bitrate))
-        video_res_x, video_res_y = self.get_resolution()
+        video_res_x, video_res_y = self.resolution
         ffmpeg_command = f'''ffmpeg -y -loop 1 -t {total_time} \
         -i "{self.output_path()['he_graph']}" \
         -f concat \
@@ -293,9 +270,9 @@ class Session:
                     ''' + f'>> "{self.output_path()["video_log"]}" 2>&1'
         await async_wait_output(ffmpeg_command)
 
-    async def gen_early_video(self):
+    async def prepare(self):
         if len(self.videos) == 0:
-            print(f"No video in session for {self.room_id}@{self.start_time}, skip!")
+            logging.warn("no videos in session %s", self.session_id)
             return
         await self.merge_xml()
         await self.clean_xml()
@@ -303,36 +280,16 @@ class Session:
         await self.process_danmaku()
         await self.process_thumbnail()
         self.generate_concat()
+        self.prepared = True
+
+    async def gen_early_video(self):
+        if not self.prepared:
+            logging.error("session %s is not prepared", self.session_id)
+            return
         await self.process_early_video()
 
     async def gen_danmaku_video(self):
-        if len(self.videos) == 0:
-            print(f"No video in session for {self.room_id}@{self.start_time}, skip!")
+        if not self.prepared:
+            logging.error("session %s is not prepared", self.session_id)
             return
         await self.process_video()
-
-
-if __name__ == '__main__':
-    BINARY_PATH = "../exes/"
-    session_json = {'EventType': 'SessionStarted', 'EventTimestamp': '2021-04-09T22:50:15.301987-07:00',
-                    'EventId': '6379acb5-0dfd-465e-bb03-58d9867e7591',
-                    'EventData': {'SessionId': 'e3807981-3104-402a-ad71-8d42023c787d', 'RoomId': 128308, 'ShortId': 0,
-                                  'Name': '隐染啊', 'Title': '不要自闭挑战', 'AreaNameParent': '娱乐', 'AreaNameChild': '户外'}}
-    filenames = ["128308-20210530-014105.flv", "128308-20210530-020536.flv", "128308-20210530-032330.flv"]
-    video_json_list = [
-        {'EventType': 'FileClosed', 'EventTimestamp': '2021-04-09T23:44:37.128312-07:00',
-         'EventId': '114c0b8d-80a3-4d2e-81f5-9d1ba17f4acd',
-         'EventData': {'RelativePath': f'128308/{filename}', 'FileSize': 128308,
-                       'Duration': 63.646, 'FileOpenTime': '2021-04-09T23:43:32.456413-07:00',
-                       'FileCloseTime': '2021-04-09T23:44:37.128288-07:00',
-                       'SessionId': '22fa4a41-6e75-4ed6-8352-2a2449eeb252', 'RoomId': 128308, 'ShortId': 0,
-                       'Name': '隐染啊', 'Title': '不要自闭挑战', 'AreaNameParent': '娱乐', 'AreaNameChild': '户外'}} for filename in filenames
-    ]
-    session = Session(session_json)
-    video_tasks = []
-    for video_json in video_json_list:
-        video = Video(video_json)
-        asyncio.run(session.add_video(video))
-
-    asyncio.run(session.gen_early_video())
-    asyncio.run(session.gen_danmaku_video())

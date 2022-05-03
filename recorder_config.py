@@ -1,8 +1,10 @@
+import logging
 from typing import Optional
-
 from bilibili_api import Verify
-
 from bilibili import Bilibili
+
+
+DEFAULT_CONTINUE_SESSION_MINUTES = 5
 
 
 class UploaderAccount:
@@ -31,12 +33,14 @@ class UploaderAccount:
             b.login(username=self.username, password=self.password)
             self.sessdata = b._session.cookies['SESSDATA']
             self.bili_jct = b._session.cookies['bili_jct']
-        print(f"login successfully! {self.name} {self.access_token} {self.sessdata} {self.bili_jct}")
+        logging.info("account %s login successfully!", self.name)
         self.verify = Verify(sessdata=self.sessdata, csrf=self.bili_jct)
 
 
 class RecoderRoom:
     id: int
+    webhook: Optional[str]
+    continue_session_minutes: Optional[int]
     uploader: Optional[str]
     tags: Optional[str]
     channel_id: Optional[int]
@@ -50,6 +54,7 @@ class RecoderRoom:
         self.uploader = None
         self.he_user_dict = None
         self.he_regex_rules = None
+        self.continue_session_minutes = DEFAULT_CONTINUE_SESSION_MINUTES
         for key, value in config_dict.items():
             self.__setattr__(key, value)
 
