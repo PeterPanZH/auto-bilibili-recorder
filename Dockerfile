@@ -8,9 +8,16 @@ ENV TZ=Asia/Shanghai
 ARG DEBIAN_FRONTEND=noninteractive
 
 
+RUN rm -f /etc/apt/sources.list.d/cuda.list && \
+    rm -f /etc/apt/sources.list.d/nvidia-ml.list && \
+    which gpg && \
+    (apt-key del 7fa2af80 && \
+    curl -L -O https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb && \
+    dpkg -i cuda-keyring_1.0-1_all.deb) || \
+    echo "skip"
 RUN apt-get update && apt-get install -y wget git apt-transport-https software-properties-common
 RUN add-apt-repository universe
-RUN apt-get update && apt-get install -y wget ffmpeg fonts-noto-color-emoji fonts-noto-cjk-extra cmake python3 python3-pip
+RUN apt-get update && apt-get install -y ffmpeg fonts-noto-color-emoji fonts-noto-cjk-extra cmake python3 python3-pip
 RUN update-ca-certificates -f
 
 RUN apt-get update && apt-get install -y libc6 libgcc1 libgssapi-krb5-2 libicu66 libssl1.1 libstdc++6 zlib1g
