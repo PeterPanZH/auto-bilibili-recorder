@@ -16,9 +16,9 @@ class Webhook:
     def record_end(self, session_id: str):
         self.request("/record_end", {sessionId: session_id})
 
-    def prepared(self, session_id: str, width: int, height: int, duration: float, thumbnail: str, danmaku: str):
+    def prepared(self, session_id: str, width: int, height: int, duration: float, thumbnail: str, danmaku: str, area_name: (str, str)):
         self.request("/prepared", {sessionId: session_id, width: width, height: height,
-                     duration: duration, thumbnail: thumbnail, danmaku: danmaku})
+                     duration: duration, thumbnail: thumbnail, danmaku: danmaku, areaNameParent: area_name[0], areaNameChild: area_name[1]})
 
     def video_generated(self, session_id: str, video_path: str):
         self.request("/video_generated",

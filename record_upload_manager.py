@@ -192,7 +192,8 @@ class RecordUploadManager:
                 height=height,
                 duration=session.duration,
                 thumbnail=paths.thumbnail,
-                danmaku=paths.xml
+                danmaku=paths.xml,
+                area_name=session.room_area_name
             )
 
         await session.gen_early_video()

@@ -82,6 +82,7 @@ class Session:
     he_time: Optional[float]
     room_name: str
     room_title: str
+    room_area_name: (str, str)
     room_config: RecoderRoom
     prepared: bool
 
@@ -105,6 +106,7 @@ class Session:
     def process_update(self, update_json):
         self.room_name = update_json["EventData"]["Name"]
         self.room_title = update_json["EventData"]["Title"]
+        self.room_area_name = update_json["EventData"]["AreaNameParent"], update_json["EventData"]["AreaNameChild"]
         if update_json["EventType"] == "SessionEnded":
             self.end_time = dateutil.parser.isoparse(update_json["EventTimestamp"])
 
