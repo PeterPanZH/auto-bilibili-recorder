@@ -230,6 +230,30 @@ class Session:
             f">> \"{self.output_path()['extras_log']}\" 2>&1"
         await async_wait_output(danmaku_conversion_command)
 
+        if not os.path.exists(self.output_path()['ass']):
+            ass = \
+                f"[Script Info]\n" \
+                f"ScriptType: v4.00+\n" \
+                f"Collisions: Normal\n" \
+                f"PlayResX: {video_res_x}\n" \
+                f"PlayResY: {video_res_y}\n" \
+                f"Timer: 100.0000\n" \
+                f"\n" \
+                f"[V4+ Styles]\n" \
+                f"Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n" \
+                f"\n" \
+                f"Style: R2L,Noto Sans CJK SC,{font_size},&H00FFFFFF,&H00FFFFFF,&H00000000,&H1E6A5149,0,0,0,0,100.00,100.00,0.00,0.00,1,1,1,8,0,0,0,1\n" \
+                f"Style: L2R,Noto Sans CJK SC,{font_size},&H00FFFFFF,&H00FFFFFF,&H00000000,&H1E6A5149,0,0,0,0,100.00,100.00,0.00,0.00,1,1,1,8,0,0,0,1\n" \
+                f"Style: TOP,Noto Sans CJK SC,{font_size},&H00FFFFFF,&H00FFFFFF,&H00000000,&H1E6A5149,0,0,0,0,100.00,100.00,0.00,0.00,1,1,1,8,0,0,0,1\n" \
+                f"Style: BTM,Noto Sans CJK SC,{font_size},&H00FFFFFF,&H00FFFFFF,&H00000000,&H1E6A5149,0,0,0,0,100.00,100.00,0.00,0.00,1,1,1,8,0,0,0,1\n" \
+                f"Style: SP,Noto Sans CJK SC,{font_size},&H00FFFFFF,&H00FFFFFF,&H00000000,&H1E6A5149,0,0,0,0,100.00,100.00,0.00,0.00,1,1,1,7,0,0,0,1\n" \
+                f"Style: message_box,Noto Sans CJK SC,38,&H00FFFFFF,&H00FFFFFF,&H00000000,&H1E6A5149,0,0,0,0,100.00,100.00,0.00,0.00,1,1,1,7,0,0,0,1\n" \
+                f"\n" \
+                f"[Events]\n" \
+                f"Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
+            with open(self.output_path()['ass'], 'w', encoding="utf-8") as f:
+                f.write(ass)
+
     async def process_early_video(self):
         ffmpeg_command = f'''ffmpeg -y \
         -f concat \
