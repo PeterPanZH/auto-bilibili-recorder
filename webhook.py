@@ -1,6 +1,8 @@
 import os
 import datetime
 import requests
+import logging
+import json
 
 from recorder_config import RecoderRoom
 
@@ -15,9 +17,11 @@ class Webhook:
         self.room = room
 
     def request(self, path: str, data: dict = {}):
-        url = self.room.webhook
-        if url is not None:
-            requests.post(url + path, json=data)
+        webhook = self.room.webhook
+        if webhook is not None:
+            url = webhook + path
+            logging.debug("webhook requesting %s with %s", webhook, json.dumps(data))
+            requests.post(webhook, json=data)
 
     def relpath(self, path: str):
         return os.path.relpath(path, os.path.join(STORAGE_PATH, str(self.room.id)))

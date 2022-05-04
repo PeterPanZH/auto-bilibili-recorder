@@ -193,14 +193,14 @@ class RecordUploadManager:
             width=width,
             height=height,
             duration=session.duration,
-            thumbnail=paths.thumbnail,
-            danmaku=paths.xml
+            thumbnail=paths.get('thumbnail'),
+            danmaku=paths.get('xml')
         )
 
         await session.gen_early_video()
         webhook.video_generated(
             session_id=session.session_id,
-            video_path=paths.early_video
+            video_path=paths.get("early_video")
         )
 
         room_config = session.room_config
@@ -241,11 +241,11 @@ class RecordUploadManager:
             if session.prepared:
                 early_upload_task = UploadTask(
                     session_id=session.session_id,
-                    video_path=paths.early_video,
-                    thumbnail_path=paths.thumbnail,
-                    sc_path=paths.sc_file,
-                    he_path=paths.he_file,
-                    subtitle_path=paths.sc_srt,
+                    video_path=paths.get("early_video"),
+                    thumbnail_path=paths.get("thumbnail"),
+                    sc_path=paths.get("sc_file"),
+                    he_path=paths.get("he_file"),
+                    subtitle_path=paths.get("sc_srt"),
                     title=title,
                     source=room_config.source,
                     description=description,
@@ -260,17 +260,17 @@ class RecordUploadManager:
         await session.gen_danmaku_video()
         webhook.video_transcoded(
             session_id = session.session_id,
-            video_path = paths.danmaku_video
+            video_path = paths.get("danmaku_video")
         )
 
         if room_config.uploader is not None:
             danmaku_upload_task = UploadTask(
                 session_id=session.session_id,
-                video_path=paths.danmaku_video,
-                thumbnail_path=paths.thumbnail,
-                sc_path=paths.sc_file,
-                he_path=paths.he_file,
-                subtitle_path=paths.sc_srt,
+                video_path=paths.get("danmaku_video"),
+                thumbnail_path=paths.get("thumbnail"),
+                sc_path=paths.get("sc_file"),
+                he_path=paths.get("he_file"),
+                subtitle_path=paths.get("sc_srt"),
                 title=title,
                 source=room_config.source,
                 description=description,
