@@ -175,7 +175,13 @@ class RecordUploadManager:
 
         webhook = self.webhooks[session.room_id] if session.room_id in self.webhooks else None
         if webhook is not None:
-            webhook.record_end(session.session_id)
+            webhook.record_end(
+                session_id = session.session_id,
+                title = session.room_title,
+                name = session.room_name,
+                area_name = session.room_area_name,
+                time = session.end_time
+            )
 
         await self.upload_video(session)
 
@@ -192,8 +198,7 @@ class RecordUploadManager:
                 height=height,
                 duration=session.duration,
                 thumbnail=paths.thumbnail,
-                danmaku=paths.xml,
-                area_name=session.room_area_name
+                danmaku=paths.xml
             )
 
         await session.gen_early_video()
@@ -311,9 +316,16 @@ class RecordUploadManager:
                         session.upload_task = None
                     return
 
-            self.sessions[session_id] = Session(update_json, room_config)
+            session = Session(update_json, room_config)
+            self.sessions[session_id] = session
             if room_id in self.webhooks:
-                self.webhooks[room_id].record_start(session_id)
+                self.webhooks[room_id].record_start(
+                    session_id = session_id,
+                    title = session.room_title,
+                    name = session.room_name,
+                    area_name = session.room_area_name,
+                    time = session.start_time
+                )
         else:
             if session_id not in self.sessions:
                 logging.warn("session %d@%s does not exists", room_id, session_id)

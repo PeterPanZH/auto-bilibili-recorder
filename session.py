@@ -2,7 +2,6 @@ import asyncio
 import datetime
 import os
 import sys
-import time
 import traceback
 import logging
 from asyncio import Task
@@ -73,7 +72,7 @@ class Video:
 
 class Session:
     session_id: str
-    start_time: time.time
+    start_time: datetime.datetime
     end_time: Optional[datetime.datetime]
     room_id: int
     videos: [Video]
@@ -92,21 +91,25 @@ class Session:
         else:
             self.room_config = room_config
         self.start_time = dateutil.parser.isoparse(session_start_event_json["EventTimestamp"])
-        self.session_id = session_start_event_json["EventData"]["SessionId"]
-        self.room_id = session_start_event_json["EventData"]["RoomId"]
+        event_data = session_start_event_json["EventData"]
+        self.session_id = event_data["SessionId"]
+        self.room_id = event_data["RoomId"]
+        self.room_name = event_data["Name"]
+        self.room_title = event_data["Title"]
+        self.room_area_name = event_data["AreaNameParent"], event_data["AreaNameChild"]
         self.end_time = None
         self.videos = []
         self.resolution = 0, 0
         self.duration = 0.0
         self.he_time = None
-        self.process_update(session_start_event_json)
         self.upload_task: Optional[Task] = None
         self.prepared = False
 
     def process_update(self, update_json):
-        self.room_name = update_json["EventData"]["Name"]
-        self.room_title = update_json["EventData"]["Title"]
-        self.room_area_name = update_json["EventData"]["AreaNameParent"], update_json["EventData"]["AreaNameChild"]
+        event_data = update_json["EventData"]
+        self.room_name = event_data["Name"]
+        self.room_title = event_data["Title"]
+        self.room_area_name = event_data["AreaNameParent"], event_data["AreaNameChild"]
         if update_json["EventType"] == "SessionEnded":
             self.end_time = dateutil.parser.isoparse(update_json["EventTimestamp"])
 

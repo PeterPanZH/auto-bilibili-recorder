@@ -1,6 +1,7 @@
 import logging
 import json
 import socket
+import os
 from quart import Quart, request, Response
 from quart.logging import default_handler, serving_handler
 
@@ -18,6 +19,7 @@ def get_free_port():
 port = get_free_port()
 app = Quart(__name__)
 
+logging.basicConfig(level=logging.INFO if os.environ.get("RECORDER_DEBUG") is None else logging.DEBUG)
 logging.config.dictConfig({
     "version": 1,
     "loggers": {
