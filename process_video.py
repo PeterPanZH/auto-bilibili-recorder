@@ -2,7 +2,7 @@ import logging
 import json
 import socket
 from quart import Quart, request, Response
-from quart.logging import serving_handler
+from quart.logging import default_handler, default_serving_handler
 
 from record_upload_manager import RecordUploadManager
 
@@ -18,7 +18,8 @@ def get_free_port():
 port = get_free_port()
 app = Quart(__name__)
 
-logging.getLogger('quart.serving').removeHandler(serving_handler)
+logging.getLogger('quart.app').removeHandler(default_handler)
+logging.getLogger('quart.serving').removeHandler(default_serving_handler)
 LOG_FORMAT = "[%(asctime)s] [%(levelname)s] %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, datefmt=DATE_FORMAT)
