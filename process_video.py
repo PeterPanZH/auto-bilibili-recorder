@@ -19,7 +19,8 @@ def get_free_port():
 port = get_free_port()
 app = Quart(__name__)
 
-logging.basicConfig(level=logging.INFO if os.environ.get("RECORDER_DEBUG") is None else logging.DEBUG)
+logging.basicConfig(level=logging.INFO if os.environ.get(
+    "RECORDER_DEBUG") is None else logging.DEBUG, format=LOG_FORMAT, datefmt=DATE_FORMAT)
 logging.config.dictConfig({
     "version": 1,
     "loggers": {
@@ -35,9 +36,9 @@ logging.getLogger('quart.app').removeHandler(default_handler)
 logging.getLogger('quart.serving').removeHandler(serving_handler)
 LOG_FORMAT = "[%(asctime)s] [%(levelname)s] %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-logging.basicConfig(level=logging.INFO, format=LOG_FORMAT, datefmt=DATE_FORMAT)
 
-record_upload_manager = RecordUploadManager(port, "./recorder_config.yaml", "recorder_save.yaml")
+record_upload_manager = RecordUploadManager(
+    port, "./recorder_config.yaml", "recorder_save.yaml")
 
 
 @app.route('/process_video', methods=['POST'])
