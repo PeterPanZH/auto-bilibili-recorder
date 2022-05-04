@@ -204,9 +204,9 @@ class RecordUploadManager:
         )
 
         room_config = session.room_config
-        uploader: UploaderAccount
-        title
-        description
+        uploader = None
+        title = ""
+        description = ""
         early_upload_task = None
 
         if room_config.uploader is not None:
