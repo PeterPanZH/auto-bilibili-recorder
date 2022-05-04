@@ -1,15 +1,26 @@
-import requests
+import os
 import datetime
+import requests
+
+from recorder_config import RecoderRoom
+
+
+STORAGE_PATH = "/storage"
 
 
 class Webhook:
-    url: str
+    room: RecoderRoom
 
-    def __init__(self, url: str):
-        self.url = url
+    def __init__(self, room: RecoderRoom):
+        self.room = room
 
     def request(self, path: str, data: dict = {}):
-        requests.post(self.url + path, json=data)
+        url = self.room.webhook
+        if url is not None:
+            requests.post(url + path, json=data)
+
+    def relpath(self, path: str):
+        return os.path.relpath(path, os.path.join(STORAGE_PATH, str(self.room.id)))
 
     def record_start(self, session_id: str, title: str, name: str, area_name: (str, str), time: datetime.datetime):
         self.request("/record_start", {"sessionId": session_id, "title": title, "name": name,
@@ -25,8 +36,8 @@ class Webhook:
 
     def video_generated(self, session_id: str, video_path: str):
         self.request("/video_generated",
-                     {"sessionId": session_id, "videoPath": video_path})
+                     {"sessionId": session_id, "videoPath": self.relpath(video_path)})
 
     def video_transcoded(self, session_id: str, video_path: str):
         self.request("/video_transcoded",
-                     {"sessionId": session_id, "videoPath": video_path})
+                     {"sessionId": session_id, "videoPath": self.relpath(video_path)})

@@ -45,8 +45,7 @@ class RecordUploadManager:
 
         self.webhooks: {int: Webhook} = dict()
         for room in self.config.rooms:
-            if room.webhook is not None:
-                self.webhooks[room.id] = Webhook(room.webhook)
+            self.webhooks[room.id] = Webhook(room)
 
         self.video_upload_queue: Queue[UploadTask] = Queue()
         self.comment_post_queue: Queue[CommentTask] = Queue()
@@ -173,40 +172,36 @@ class RecordUploadManager:
         room_config = session.room_config
         await asyncio.sleep(room_config.continue_session_minutes * 60)
 
-        webhook = self.webhooks[session.room_id] if session.room_id in self.webhooks else None
-        if webhook is not None:
-            webhook.record_end(
-                session_id = session.session_id,
-                title = session.room_title,
-                name = session.room_name,
-                area_name = session.room_area_name,
-                time = session.end_time
-            )
+        self.webhooks[session.room_id].record_end(
+            session_id = session.session_id,
+            title = session.room_title,
+            name = session.room_name,
+            area_name = session.room_area_name,
+            time = session.end_time
+        )
 
         await self.upload_video(session)
 
     async def upload_video(self, session: Session):
-        webhook = self.webhooks[session.room_id] if session.room_id in self.webhooks else None
+        webhook = self.webhooks[session.room_id]
         paths = session.output_path()
 
         await session.prepare()
-        if webhook is not None:
-            width, height = session.resolution
-            webhook.prepared(
-                session_id=session.session_id,
-                width=width,
-                height=height,
-                duration=session.duration,
-                thumbnail=paths.thumbnail,
-                danmaku=paths.xml
-            )
+        width, height = session.resolution
+        webhook.prepared(
+            session_id=session.session_id,
+            width=width,
+            height=height,
+            duration=session.duration,
+            thumbnail=paths.thumbnail,
+            danmaku=paths.xml
+        )
 
         await session.gen_early_video()
-        if webhook is not None:
-            webhook.video_generated(
-                session_id=session.session_id,
-                video_path=paths.early_video
-            )
+        webhook.video_generated(
+            session_id=session.session_id,
+            video_path=paths.early_video
+        )
 
         room_config = session.room_config
         uploader: UploaderAccount
@@ -263,11 +258,10 @@ class RecordUploadManager:
 
         await asyncio.sleep(DANMAKU_VIDEO_WAIT_MINUTES * 60)
         await session.gen_danmaku_video()
-        if webhook is not None:
-            webhook.video_transcoded(
-                session_id = session.session_id,
-                video_path = paths.danmaku_video
-            )
+        webhook.video_transcoded(
+            session_id = session.session_id,
+            video_path = paths.danmaku_video
+        )
 
         if room_config.uploader is not None:
             danmaku_upload_task = UploadTask(
@@ -318,14 +312,13 @@ class RecordUploadManager:
 
             session = Session(update_json, room_config)
             self.sessions[session_id] = session
-            if room_id in self.webhooks:
-                self.webhooks[room_id].record_start(
-                    session_id = session_id,
-                    title = session.room_title,
-                    name = session.room_name,
-                    area_name = session.room_area_name,
-                    time = session.start_time
-                )
+            self.webhooks[room_id].record_start(
+                session_id = session_id,
+                title = session.room_title,
+                name = session.room_name,
+                area_name = session.room_area_name,
+                time = session.start_time
+            )
         else:
             if session_id not in self.sessions:
                 logging.warn("session %d@%s does not exists", room_id, session_id)
