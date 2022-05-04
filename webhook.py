@@ -20,7 +20,8 @@ class Webhook:
         webhook = self.room.webhook
         if webhook is not None:
             url = webhook + path
-            logging.debug("webhook requesting %s with %s", webhook, json.dumps(data))
+            logging.debug("webhook requesting %s with %s",
+                          webhook, json.dumps(data))
             requests.post(webhook, json=data)
 
     def relpath(self, path: str):
@@ -40,8 +41,8 @@ class Webhook:
 
     def video_generated(self, session_id: str, video_path: str):
         self.request("/video_generated",
-                     {"sessionId": session_id, "videoPath": self.relpath(video_path)})
+                     {"sessionId": session_id, "videoPath": self.relpath(video_path), "videoSize": os.path.getsize(video_path)})
 
     def video_transcoded(self, session_id: str, video_path: str):
         self.request("/video_transcoded",
-                     {"sessionId": session_id, "videoPath": self.relpath(video_path)})
+                     {"sessionId": session_id, "videoPath": self.relpath(video_path), "videoSize": os.path.getsize(video_path)})
