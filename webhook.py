@@ -32,7 +32,7 @@ class Webhook:
 
     def prepared(self, session_id: str, width: int, height: int, duration: float, thumbnail: str, danmaku: str):
         self.request("/prepared", {"sessionId": session_id, "width": width, "height": height,
-                     "duration": duration, "thumbnail": thumbnail, "danmaku": danmaku})
+                     "duration": duration, "thumbnail": self.relpath(thumbnail), "danmaku": self.relpath(danmaku)})
 
     def video_generated(self, session_id: str, video_path: str):
         self.request("/video_generated",
