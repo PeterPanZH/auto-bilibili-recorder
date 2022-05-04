@@ -303,7 +303,7 @@ class RecordUploadManager:
 
         if update_json["EventType"] == "SessionStarted":
             for session in self.sessions.values():
-                if session.room_id == room_id and \
+                if session.room_id == room_id and session.end_time is not None and \
                         (event_timestamp - session.end_time).total_seconds() / 60 < room_config.continue_session_minutes:
                     self.sessions[session_id] = session
                     if session.upload_task is not None:

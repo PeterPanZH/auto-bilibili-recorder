@@ -116,8 +116,9 @@ class Session:
             if video.video_resolution_x == 0 or video.video_resolution_y == 0:
                 raise ValueError("resolution invalid")
             w, h = self.resolution
-            if w != video.video_resolution_x or h != video.video_resolution_y:
-                raise ValueError("unmatched resolution")
+            if w != 0 and h != 0:
+                if w != video.video_resolution_x or h != video.video_resolution_y:
+                    raise ValueError("unmatched resolution")
             self.duration += video.video_length_flv
             self.resolution = video.video_resolution_x, video.video_resolution_y
         except ValueError as err:

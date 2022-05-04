@@ -11,19 +11,19 @@ class Webhook:
         requests.post(self.url + path, json=data)
 
     def record_start(self, session_id: str):
-        self.request("/record_start", {sessionId: session_id})
+        self.request("/record_start", {"sessionId": session_id})
 
     def record_end(self, session_id: str):
-        self.request("/record_end", {sessionId: session_id})
+        self.request("/record_end", {"sessionId": session_id})
 
     def prepared(self, session_id: str, width: int, height: int, duration: float, thumbnail: str, danmaku: str, area_name: (str, str)):
-        self.request("/prepared", {sessionId: session_id, width: width, height: height,
-                     duration: duration, thumbnail: thumbnail, danmaku: danmaku, areaNameParent: area_name[0], areaNameChild: area_name[1]})
+        self.request("/prepared", {"sessionId": session_id, "width": width, "height": height,
+                     "duration": duration, "thumbnail": thumbnail, "danmaku": danmaku, "areaNameParent": area_name[0], "areaNameChild": area_name[1]})
 
     def video_generated(self, session_id: str, video_path: str):
         self.request("/video_generated",
-                     {sessionId: session_id, videoPath: video_path})
+                     {"sessionId": session_id, "videoPath": video_path})
 
     def video_transcoded(self, session_id: str, video_path: str):
         self.request("/video_transcoded",
-                     {sessionId: session_id, videoPath: video_path})
+                     {"sessionId": session_id, "videoPath": video_path})
