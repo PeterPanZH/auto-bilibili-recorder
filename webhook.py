@@ -21,8 +21,8 @@ class Webhook:
         if webhook is not None:
             url = webhook + path
             logging.debug("webhook requesting %s with %s",
-                          webhook, json.dumps(data))
-            requests.post(webhook, json=data)
+                          url, json.dumps(data))
+            requests.post(url, json=data)
 
     def relpath(self, path: str):
         return os.path.relpath(path, os.path.join(STORAGE_PATH, str(self.room.id)))

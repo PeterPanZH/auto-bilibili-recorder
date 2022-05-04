@@ -15,9 +15,9 @@ def spawn_recorder(port, room):
         '{roomid}/{date}/{roomid}-{date}-{time}-{ms}.flv ' \
         f'/storage/ ' \
         f'{room} '
-    logging.info("spawn recorder for %s", room)
+    logging.info("spawn recorder for room %s", room)
     logging.debug(spawn_command)
-    return subprocess.Popen(spawn_command, shell=True)
+    return subprocess.Popen(spawn_command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 class RecorderManager:
