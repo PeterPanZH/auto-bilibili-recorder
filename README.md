@@ -46,6 +46,9 @@ ${录制目标文件夹}
 * `$yy`：有前缀0的年份，如 2021 （年）
 * `$mm`：有前缀0的月份，如 04 （月）
 * `$dd`：有前缀0的日期，如 01 （日）
+* `$HH`：小时
+* `$MM`：分钟
+* `$SS`：秒
 * `$flv_path`：录播文件所对应的相对目录
 
 常见例子：
@@ -77,6 +80,8 @@ ${录制目标文件夹}
    x64/arm64 无 GPU：`sudo docker run -d --restart=always --name auto-bilibili-recorder -v ${录制目标文件夹}:/storage ghcr.io/valkjsaaa/auto-bilibili-recorder:master`
 
    x64 有 GPU：`sudo docker run -d --restart=always --gpus all -e NVIDIA_DRIVER_CAPABILITIES=video,compute,utility --name auto-bilibili-recorder -v ${录制目标文件夹}:/storage ghcr.io/valkjsaaa/auto-bilibili-recorder-gpu:master`
+   
+   注：国内用户可以使用 `ghcr.dockerproxy.com` 替换掉 `ghcr.io` 以提升镜像下载速度，如： `ghcr.dockerproxy.com/valkjsaaa/auto-bilibili-recorder-gpu:master`
 
 3. 立即停止录播（会中断正在录制/转码/上传的录播）：
 

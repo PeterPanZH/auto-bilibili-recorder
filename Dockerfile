@@ -1,7 +1,7 @@
 # Auto bilibili live recording server
 #
 # VERSION               0.0.1
-ARG COMMON_IMAGE=nvidia/cuda:11.0-devel-ubuntu20.04
+ARG COMMON_IMAGE=nvidia/cuda:11.0.3-devel-ubuntu20.04
 FROM ${COMMON_IMAGE}
 
 ENV TZ=Asia/Shanghai
@@ -27,14 +27,14 @@ RUN mkdir -p /opt/pwsh
 RUN tar -xvzf powershell.tar.gz -C /opt/pwsh
 
 RUN wget https://dot.net/v1/dotnet-install.sh
-RUN bash ./dotnet-install.sh -c 5.0
+RUN bash ./dotnet-install.sh -c 6.0
 
 RUN if [[ ${COMMON_IMAGE} == *"cuda"* ]] ; then ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1 ; fi
 
 RUN ln -s /opt/pwsh/pwsh /usr/bin/powershell
 RUN ln -s /root/.dotnet/dotnet /usr/bin/dotnet
 
-RUN git clone https://github.com/valkjsaaa/BililiveRecorder.git && cd BililiveRecorder && git checkout 94ca0b9e01810c46dabdd4a7feeea7b1787dbf77
+RUN git clone https://github.com/BililiveRecorder/BililiveRecorder.git && cd BililiveRecorder && git checkout v2.5.0
 
 WORKDIR "/BililiveRecorder"
 
@@ -45,7 +45,7 @@ RUN dpkgArch="$(uname -m)"; \
         *) export RID='linux-x64' ;; \
     esac; \
     dotnet build BililiveRecorder.Cli/BililiveRecorder.Cli.csproj -r $RID -c Release -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishTrimmed=True -p:TrimMode=Link &&\
-    ln -s /BililiveRecorder/BililiveRecorder.Cli/bin/Release/net5.0/$RID/BililiveRecorder.Cli /BililiveRecorder/BililiveRecorder.Cli/bin/Release/net5.0/
+    ln -s /BililiveRecorder/BililiveRecorder.Cli/bin/Release/net6.0/$RID/BililiveRecorder.Cli /BililiveRecorder/BililiveRecorder.Cli/bin/Release/net6.0/
 
 
 RUN dotnet nuget locals all --clear
@@ -66,7 +66,7 @@ RUN make -f makefile
 
 #ENTRYPOINT /bin/bash
 
-RUN pip3 install git+https://github.com/PeterPanZH/danmaku_tools.git@55e6d337f0e2c723477b7c2c51d1800679626b4b
+RUN pip3 install git+https://github.com/PeterPanZH/danmaku_tools.git@1aa12c36f42e21795de5ec3a1c7cc3300c38082c
 
 WORKDIR "/usr/local/bin"
 

@@ -6,13 +6,14 @@ from commons import BINARY_PATH
 
 def spawn_recorder(port, room):
     spawn_command = \
-        f"{BINARY_PATH}BililiveRecorder/BililiveRecorder.Cli/bin/Release/net5.0/BililiveRecorder.Cli " \
+        f"{BINARY_PATH}BililiveRecorder/BililiveRecorder.Cli/bin/Release/net6.0/BililiveRecorder.Cli " \
         f"portable " \
         f"-d 63 " \
         f"--webhook-url " \
         f'"http://127.0.0.1:{port}/process_video" ' \
-        f'--filename-format ' \
-        '{roomid}/{date}/{roomid}-{date}-{time}-{ms}.flv ' \
+        f'--filename ' \
+        '"{{ roomId }}/{{ \\"now\\" | time_zone: \\"Asia/Shanghai\\" | format_date: \\"yyyyMMdd\\" }}/'\
+        '{{ roomId }}-{{ \\"now\\" | time_zone: \\"Asia/Shanghai\\" | format_date: \\"yyyyMMdd-HHmmss-fff\\" }}.flv" ' \
         f'/storage/ ' \
         f'{room} '
     logging.info("spawn recorder for room %s", room)

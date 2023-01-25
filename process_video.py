@@ -50,5 +50,5 @@ async def respond_process():
 
 
 if __name__ == "__main__":
-    logging.info("webhook litsening on port %d", port)
+    logging.info("webhook listening on port %d", port)
     app.run(port=port)
